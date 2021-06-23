@@ -1,8 +1,8 @@
 ## What does this program do?
 It goes through the local copies of the dependencies of a project  
 (or, to be more precise, the packages output by `cargo metadata`) and looks for potential license files:  
-- Files than have a path containing "LICENSE|COPYRIGHT|NOTICE|AUTHORS|COPYING" (or in lowercase)
-- Files that have a path containing "README", ".txt" or ".md" and include a line with one of the words mentioned above
+- Files than have a path containing "`LICENSE|COPYRIGHT|NOTICE|AUTHORS|COPYING`" (or in lowercase)
+- Files that have a path containing "`README`", "`.txt`" or "`.md`" and include a line with one of the words mentioned above
 
 These are then copied (while preserving the directory structure) into a user-defined directory.
 
