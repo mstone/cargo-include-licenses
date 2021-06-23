@@ -45,6 +45,7 @@ fn main() {
             )
         )
         .get_matches();
+
     let out_dir = PathBuf::from(matches.subcommand().1.unwrap().value_of("out_dir").unwrap());
     let command = MetadataCommand::new();
     let metadata = command.exec().unwrap();

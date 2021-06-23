@@ -37,21 +37,35 @@ use cargo_metadata::Package;
 use std::fs::create_dir_all;
 use std::io::{ErrorKind, BufReader, BufRead};
 
+/// Returns the source path for a package
 pub fn path(package: cargo_metadata::Package) -> Option<Utf8PathBuf> {
     package.manifest_path.parent().map(|path| path.to_path_buf())
 }
 
+/// Used to identify files (most likely) containing a license
 static LICENSE_REGEX: SyncOnceCell<Regex> = SyncOnceCell::new();
+/// Used to select files to check the contents of for licenses
 static CHECK_CONTENT_REGEX: SyncOnceCell<Regex> = SyncOnceCell::new();
+/// Used to determine whether a file contains licensing information
+static LICENSE_CONTENT_REGEX: SyncOnceCell<Regex> = SyncOnceCell::new();
 
 
+/// Tries to find all license-related files for a given package
+/// ## Returns
+/// - The local root path of the crate (obtained by [`path`])
+/// - An iterator over all potential license-related files
 pub fn search_for_licenses(package: &Package) -> Option<(PathBuf, Box<dyn Iterator<Item=PathBuf>>)> {
     let license_regex = LICENSE_REGEX.get_or_init(|| {
-        Regex::new(r"(?i)LICENSE|COPYRIGHT|NOTICE|AUTHORS|COPYING").unwrap()
+        Regex::new(r"(?i)LICENSE|COPYRIGHT|NOTICE|AUTHORS|CONTRIBUTORS|COPYING|PATENT").unwrap()
+    });
+
+    let license_content_regex = LICENSE_CONTENT_REGEX.get_or_init(|| {
+        // Some items are missing here because they tend to produce false-positives
+        Regex::new(r"(?i)LICENSE|COPYRIGHT|COPYING|PATENT").unwrap()
     });
 
     let check_content_regex = CHECK_CONTENT_REGEX.get_or_init(|| {
-        Regex::new(r"(?i)\.txt|\.md|README").unwrap()
+        Regex::new(r"(?i)\.html|\.txt|\.md|README").unwrap()
     });
 
     let path = package.manifest_path.parent().map(|path| path.to_path_buf())?;
@@ -68,7 +82,7 @@ pub fn search_for_licenses(package: &Package) -> Option<(PathBuf, Box<dyn Iterat
                     license_regex.is_match(&entry.path().to_string_lossy()) ||
                     (
                         check_content_regex.is_match(&entry.path().to_string_lossy()) &&
-                        matches_any_line(&license_regex, entry.path()).unwrap_or_default()
+                        matches_any_line(&license_content_regex, entry.path()).unwrap_or_default()
                     )
                 )
                 .map(|entry| entry.path().to_path_buf()))
@@ -77,6 +91,10 @@ pub fn search_for_licenses(package: &Package) -> Option<(PathBuf, Box<dyn Iterat
 }
 
 
+/// Checks whether a regular expression matches any (part of a) line in a given file
+/// ## Returns
+/// - [`core::Option::None`] if the file could not be opened
+/// - [`core::Option::Some`] else
 fn matches_any_line(regex: &Regex, file: &Path) -> Option<bool> {
     let file = std::fs::File::open(file).ok()?;
     let reader = BufReader::new(file);
@@ -85,12 +103,14 @@ fn matches_any_line(regex: &Regex, file: &Path) -> Option<bool> {
         .any(|line| regex.is_match(&line)))
 }
 
-pub fn make_paths_relative<'a>(root_path: &'a Path, paths: Box<dyn Iterator<Item=PathBuf> + 'a>) -> Box<dyn Iterator<Item=PathBuf> + 'a> {
+/// Helper function to [std::path::Path::strip_prefix] for an iterator over [std::path::PathBuf]s
+fn make_paths_relative<'a>(root_path: &'a Path, paths: Box<dyn Iterator<Item=PathBuf> + 'a>) -> Box<dyn Iterator<Item=PathBuf> + 'a> {
     // https://stackoverflow.com/a/39343127
     Box::new(paths.map(move |path| path.strip_prefix(root_path).unwrap().to_path_buf()))
 }
 
-pub fn with_relative_paths<'a>(root_path: PathBuf, paths: Box<dyn Iterator<Item=PathBuf> + 'a>) -> Box<dyn Iterator<Item=(PathBuf, PathBuf)> + 'a> {
+/// Same as [make_paths_relative], only that the returned iterator still contains the full path
+fn with_relative_paths<'a>(root_path: PathBuf, paths: Box<dyn Iterator<Item=PathBuf> + 'a>) -> Box<dyn Iterator<Item=(PathBuf, PathBuf)> + 'a> {
     // https://stackoverflow.com/a/39343127
     Box::new(paths.map(move |path| {
         let stripped_path = (&path.canonicalize().unwrap()).strip_prefix(&root_path.canonicalize().unwrap()).map_err(|err| format!("Couldn't remove the prefix {:?} from {:?}: {}", &root_path, &path, err)).unwrap().to_path_buf();
@@ -117,6 +137,7 @@ pub fn search_for_all_licenses(metadata: cargo_metadata::Metadata) -> Licenses {
     )
 }
 
+/// Copies all the licenses to a common directory, preserving their directory hierarchy
 pub fn copy_licenses_to(destination: &Path, licenses: Licenses) -> std::io::Result<Vec<std::io::Result<()>>> {
     create_dir_all(destination)?;
 
@@ -138,6 +159,10 @@ pub fn copy_licenses_to(destination: &Path, licenses: Licenses) -> std::io::Resu
     )
 }
 
+
+// It is a quick and dirty solution, but as it would only be printed anyway, it shouldn't be a major problem
+/// Helper function to convert from the result of [copy_dir::copy_dir] into a more usable format with
+/// only success or one error (which then contains the list of errors in a string).
 #[inline]
 fn flatten_copy_dir_result(result: Result<Vec<std::io::Error>, std::io::Error>) -> Result<(), std::io::Error> {
     match result {

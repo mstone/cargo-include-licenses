@@ -2,11 +2,5 @@
 <project version="4">
   <component name="VcsDirectoryMappings">
     <mapping directory="" vcs="Git" />
-    <mapping directory="$PROJECT_DIR$/licenses/cargo-include-licenses" vcs="Git" />
-    <mapping directory="$PROJECT_DIR$/licenses/cargo-include-licenses/licenses/cargo-include-licenses" vcs="Git" />
-    <mapping directory="$PROJECT_DIR$/licenses/cargo-include-licenses/licenses/cargo-include-licenses/licenses/cargo-include-licenses" vcs="Git" />
-    <mapping directory="$PROJECT_DIR$/licenses/cargo-include-licenses/licenses/cargo-include-licenses/licenses/cargo-include-licenses/licenses/cargo-include-licenses" vcs="Git" />
-    <mapping directory="$PROJECT_DIR$/licenses/cargo-include-licenses/licenses/cargo-include-licenses/licenses/cargo-include-licenses/licenses/cargo-include-licenses/licenses/cargo-include-licenses" vcs="Git" />
-    <mapping directory="$PROJECT_DIR$/licenses/cargo-include-licenses/licenses/cargo-include-licenses/licenses/cargo-include-licenses/licenses/cargo-include-licenses/licenses/cargo-include-licenses/licenses/cargo-include-licenses" vcs="Git" />
   </component>
 </project>
