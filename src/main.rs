@@ -40,6 +40,7 @@ fn main() {
                 .help("The directory where to put the licenses into")
                 .required(true)
                 .value_name("DIR")
+                .default_value("licenses")
                 .validator(|out_dir| (PathBuf::from(&out_dir).is_dir() || !PathBuf::from(out_dir).exists()).then(|| ()).ok_or_else(|| String::from("Not a directory")))
             )
         )
