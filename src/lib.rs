@@ -31,7 +31,7 @@
 use std::path::{PathBuf, Path};
 use cargo_metadata::camino::Utf8PathBuf;
 use walkdir::WalkDir;
-use std::lazy::SyncOnceCell;
+use std::sync::OnceLock;
 use regex::Regex;
 use cargo_metadata::Package;
 use std::fs::create_dir_all;
@@ -43,11 +43,11 @@ pub fn path(package: cargo_metadata::Package) -> Option<Utf8PathBuf> {
 }
 
 /// Used to identify files (most likely) containing a license
-static LICENSE_REGEX: SyncOnceCell<Regex> = SyncOnceCell::new();
+static LICENSE_REGEX: OnceLock<Regex> = OnceLock::new();
 /// Used to select files to check the contents of for licenses
-static CHECK_CONTENT_REGEX: SyncOnceCell<Regex> = SyncOnceCell::new();
+static CHECK_CONTENT_REGEX: OnceLock<Regex> = OnceLock::new();
 /// Used to determine whether a file contains licensing information
-static LICENSE_CONTENT_REGEX: SyncOnceCell<Regex> = SyncOnceCell::new();
+static LICENSE_CONTENT_REGEX: OnceLock<Regex> = OnceLock::new();
 
 
 /// Tries to find all license-related files for a given package
