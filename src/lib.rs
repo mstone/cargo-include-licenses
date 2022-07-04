@@ -78,13 +78,17 @@ pub fn search_for_licenses(package: &Package) -> Option<(PathBuf, Box<dyn Iterat
             Box::new(WalkDir::new(path)
                 .into_iter()
                 .filter_map(|entry| entry.ok())
-                .filter(move |entry|
+                .filter(move |entry| {
+                    let ft = entry.file_type();
+                    if !(ft.is_file() || ft.is_symlink()) {
+                        return false;
+                    };
                     license_regex.is_match(&entry.path().to_string_lossy()) ||
                     (
                         check_content_regex.is_match(&entry.path().to_string_lossy()) &&
                         matches_any_line(&license_content_regex, entry.path()).unwrap_or_default()
                     )
-                )
+                })
                 .map(|entry| entry.path().to_path_buf()))
         }
     ))
